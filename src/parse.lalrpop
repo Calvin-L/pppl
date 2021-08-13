@@ -1,0 +1,102 @@
+use std::str::FromStr;
+use crate::syntax::*;
+use num_bigint::BigInt;
+use std::collections::BTreeMap;
+
+grammar;
+
+Exp0: Exp<SourceSpan> = {
+    <st:@L> <n:Num>    <ed:@R> => Exp::Literal(SourceSpan { start: st, end: ed }, Value::Int(n)),
+    <st:@L> <b:True>   <ed:@R> => Exp::Literal(SourceSpan { start: st, end: ed }, Value::Bool(b)),
+    <st:@L> <b:False>  <ed:@R> => Exp::Literal(SourceSpan { start: st, end: ed }, Value::Bool(b)),
+    <st:@L> <s:StrLit> <ed:@R> => Exp::Literal(SourceSpan { start: st, end: ed }, Value::Blob(s)),
+    <st:@L> "{" "}" <ed:@R> => Exp::Literal(SourceSpan { start: st, end: ed }, Value::Dict(BTreeMap::new())),
+    <st:@L> <n:Name>   <ed:@R> => Exp::Name(SourceSpan { start: st, end: ed }, n),
+    <st:@L> "." <ed:@R> => Exp::Root(SourceSpan { start: st, end: ed }),
+    "(" <e:Exp> ")" => e,
+};
+
+Exp1: Exp<SourceSpan> = {
+    <st:@L> "!" <e:Exp1> <ed:@R> => Exp::Unary(SourceSpan { start: st, end: ed }, UnaryOp::NOT,    Box::new(e)),
+    <st:@L> "-" <e:Exp1> <ed:@R> => Exp::Unary(SourceSpan { start: st, end: ed }, UnaryOp::NEGATE, Box::new(e)),
+    <e:Exp0> => e,
+}
+
+Exp2: Exp<SourceSpan> = {
+    <st:@L> <e1:Exp2> "[" <e2:Exp> "]" <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::INDEX, Box::new(e1), Box::new(e2)),
+    <e:Exp1> => e,
+}
+
+Exp3: Exp<SourceSpan> = {
+    <st:@L> <e1:Exp3> "*" <e2:Exp2> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::TIMES, Box::new(e1), Box::new(e2)),
+    <st:@L> <e1:Exp3> "/" <e2:Exp2> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::DIVIDE, Box::new(e1), Box::new(e2)),
+    <st:@L> <e1:Exp3> "%" <e2:Exp2> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::MOD, Box::new(e1), Box::new(e2)),
+    <e:Exp2> => e,
+}
+
+Exp4: Exp<SourceSpan> = {
+    <st:@L> <e1:Exp4> "+" <e2:Exp3> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::PLUS, Box::new(e1), Box::new(e2)),
+    <st:@L> <e1:Exp4> "-" <e2:Exp3> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::MINUS, Box::new(e1), Box::new(e2)),
+    <e:Exp3> => e,
+}
+
+Comparison: Exp<SourceSpan> = {
+    <st:@L> <e1:Comparison> "==" <e2:Exp4> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::EQ, Box::new(e1), Box::new(e2)),
+    <st:@L> <e1:Comparison> "!=" <e2:Exp4> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::NE, Box::new(e1), Box::new(e2)),
+    <st:@L> <e1:Comparison> "<" <e2:Exp4> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::LT, Box::new(e1), Box::new(e2)),
+    <st:@L> <e1:Comparison> "<=" <e2:Exp4> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::LE, Box::new(e1), Box::new(e2)),
+    <st:@L> <e1:Comparison> ">" <e2:Exp4> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::GT, Box::new(e1), Box::new(e2)),
+    <st:@L> <e1:Comparison> ">=" <e2:Exp4> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::GE, Box::new(e1), Box::new(e2)),
+    <st:@L> <e1:Comparison> "in" <e2:Exp4> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::IN, Box::new(e1), Box::new(e2)),
+    <e:Exp4> => e,
+}
+
+ConjDisj: Exp<SourceSpan> = {
+    <st:@L> <e1:ConjDisj> "&&" <e2:Comparison> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::AND, Box::new(e1), Box::new(e2)),
+    <st:@L> <e1:ConjDisj> "||" <e2:Comparison> <ed:@R> => Exp::Binary(SourceSpan { start: st, end: ed }, BinaryOp::OR, Box::new(e1), Box::new(e2)),
+    <e:Comparison> => e,
+}
+
+IfThenElse: Exp<SourceSpan> = {
+    <st:@L> "if" <e1:IfThenElse> "then" <e2:IfThenElse> "else" <e3:IfThenElse> <ed:@R> => Exp::Ternary(SourceSpan { start: st, end: ed }, TernaryOp::IF, Box::new(e1), Box::new(e2), Box::new(e3)),
+    <e:ConjDisj> => e,
+}
+
+pub Exp: Exp<SourceSpan> = {
+    <e:IfThenElse> => e
+}
+
+Require: Exp<SourceSpan> = {
+    "require" <e:Exp> ";" => e,
+}
+
+LVal: LVal<SourceSpan> = {
+    <st:@L> "." <ed:@L> => LVal::Root(SourceSpan { start: st, end: ed }),
+    <st:@L> <n:Name> <ed:@L> => LVal::Index(SourceSpan { start: st, end: ed }, Box::new(LVal::Root(SourceSpan { start: st, end: st })), Box::new(Exp::Literal(SourceSpan { start: st, end: ed }, Value::Blob(str2blob(&n))))),
+    <st:@L> <lv:LVal> "[" <e:Exp> "]" <ed:@L> => LVal::Index(SourceSpan { start: st, end: ed }, Box::new(lv), Box::new(e)),
+}
+
+pub Assign: (LVal<SourceSpan>, Exp<SourceSpan>) = {
+    <lv:LVal> ":=" <e:Exp> ";" => (lv, e),
+}
+
+Block: Block<SourceSpan> = {
+    <st:@L> "def" <n:Name> ":" <r:Require*> <a:Assign*> <ed:@R> =>
+        Block {
+            annotation: SourceSpan { start: st, end: ed },
+            name: n,
+            parameters: vec![],
+            guards: r,
+            assignments: a,
+        },
+}
+
+pub Module: Module<SourceSpan> = {
+    <st:@L> <blocks:Block*> <ed:@R> => Module { annotation: SourceSpan { start: st, end: ed }, blocks: blocks },
+}
+
+Num: BigInt = <s:r"[0-9]+"> => BigInt::from_str(s).unwrap();
+True: bool = "true" => true;
+False: bool = "false" => false;
+StrLit: Vec<u8> = "\"x\"" => str2blob("x"); // TODO
+Name: String = <s:r"[a-zA-Z]\w*"> => s.to_string();

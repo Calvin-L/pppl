@@ -1,0 +1,11 @@
+
+def init:
+    require !("x" in .);
+    x := 0;
+
+def up:
+    x := x + 1;
+
+def wipe:
+    require x > 100;
+    x := 0;

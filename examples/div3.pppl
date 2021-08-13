@@ -1,0 +1,18 @@
+
+def begin:
+    require x >= 0;
+    n := x;
+    x := -1;
+    done := false;
+    q := 0;
+    r := 0;
+
+def step:
+    require n >= 3;
+    n := n - 3;
+    q := q + 1;
+
+def done:
+    require n < 3;
+    r := n;
+    done := true;
