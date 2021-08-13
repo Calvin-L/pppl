@@ -24,7 +24,6 @@ fn run(storage: &mut Storage) {
         match eval::sim_step(storage, &mut rng) {
             Ok(eval::StepOutcome::Deadlock) => {
                 println!("deadlock");
-                return;
             }
             Ok(eval::StepOutcome::TriggeredBlock(name)) => {
                 println!("triggered: `{}`", name);
