@@ -75,6 +75,20 @@ In principle execution can be parallelized, but the current implementation is
 single-threaded.
 
 
+#### Data Parallelism
+
+Sometimes doing two different things in parallel isn't enough.  Sometimes you
+need to do the same thing in parallel with many pieces of data.
+
+```
+def inc(x in m):
+    m[x] := m[x] + 1;
+```
+
+Blocks can take parameters, such as `x in m` above.  If `m` is a dictionary,
+then `inc` can be run with `x` set to any key of `m`.
+
+
 ## Concrete Instructions
 
 First, compile this project:

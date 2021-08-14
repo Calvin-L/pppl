@@ -72,7 +72,7 @@ Require: Exp<SourceSpan> = {
 
 LVal: LVal<SourceSpan> = {
     <st:@L> "." <ed:@L> => LVal::Root(SourceSpan { start: st, end: ed }),
-    <st:@L> <n:Name> <ed:@L> => LVal::Index(SourceSpan { start: st, end: ed }, Box::new(LVal::Root(SourceSpan { start: st, end: st })), Box::new(Exp::Literal(SourceSpan { start: st, end: ed }, Value::Blob(str2blob(&n))))),
+    <st:@L> <n:Name> <ed:@L> => LVal::Name(SourceSpan { start: st, end: ed }, n),
     <st:@L> <lv:LVal> "[" <e:Exp> "]" <ed:@L> => LVal::Index(SourceSpan { start: st, end: ed }, Box::new(lv), Box::new(e)),
 }
 
@@ -81,14 +81,28 @@ pub Assign: (LVal<SourceSpan>, Exp<SourceSpan>) = {
 }
 
 Block: Block<SourceSpan> = {
-    <st:@L> "def" <n:Name> ":" <r:Require*> <a:Assign*> <ed:@R> =>
+    <st:@L> "def" <n:Name> <p:MaybeParams> ":" <r:Require*> <a:Assign*> <ed:@R> =>
         Block {
             annotation: SourceSpan { start: st, end: ed },
             name: n,
-            parameters: vec![],
+            parameters: p,
             guards: r,
             assignments: a,
         },
+}
+
+MaybeParams: Vec<(String, Exp<SourceSpan>)> = {
+    => vec![],
+    "(" <p:ParameterList> ")" => p,
+}
+
+ParameterList: Vec<(String, Exp<SourceSpan>)> = {
+    <p:Parameter> => vec![p],
+    <mut l:ParameterList> "," <p:Parameter> => { l.push(p); l },
+}
+
+Parameter: (String, Exp<SourceSpan>) = {
+    <n:Name> "in" <e:Exp> => (n, e),
 }
 
 pub Module: Module<SourceSpan> = {

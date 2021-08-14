@@ -7,6 +7,7 @@ use parse::{ModuleParser, ExpParser, AssignParser};
 use std::fs;
 use rand;
 use clap::{App, Arg, SubCommand};
+use std::collections::BTreeMap;
 
 #[macro_use] extern crate lalrpop_util;
 lalrpop_mod!(pub parse); // synthesized by LALRPOP
@@ -25,8 +26,12 @@ fn run(storage: &mut Storage) {
             Ok(eval::StepOutcome::Deadlock) => {
                 println!("deadlock");
             }
-            Ok(eval::StepOutcome::TriggeredBlock(name)) => {
-                println!("triggered: `{}`", name);
+            Ok(eval::StepOutcome::TriggeredBlock(name, args)) => {
+                if args.is_empty() {
+                    println!("triggered: `{}`", name);
+                } else {
+                    println!("triggered: `{}` with arguments {:?}", name, args);
+                }
             }
             Err(e) => {
                 println!("fault: {:?}", e);
@@ -60,6 +65,8 @@ fn main() {
                 .index(1)))
         .get_matches();
 
+    let no_bound_names = BTreeMap::new();
+
     if let Some(load_args) = matches.subcommand_matches("load") {
         let mut s = Storage::open().unwrap();
         let filename = load_args.value_of("INPUT").unwrap();
@@ -80,15 +87,15 @@ fn main() {
         let mut s = Storage::open().unwrap();
         let e = ExpParser::new().parse(read_args.value_of("EXPR").unwrap()).unwrap();
         let tx = s.start_transaction().unwrap();
-        let res = eval::eval(&e, &tx).unwrap();
+        let res = eval::eval(&e, &tx, &no_bound_names).unwrap();
         println!("{}", res);
     } else if let Some(write_args) = matches.subcommand_matches("write") {
         let mut s = Storage::open().unwrap();
         let (lval, e) = AssignParser::new().parse(write_args.value_of("ASSIGNMENT").unwrap()).unwrap();
         let mut tx = s.start_transaction().unwrap();
         eval::do_assignment(
-            &eval::eval_lval(&lval, &tx).unwrap(),
-            &eval::eval(&e, &tx).unwrap(),
+            &eval::eval_lval(&lval, &tx, &no_bound_names).unwrap(),
+            &eval::eval(&e, &tx, &no_bound_names).unwrap(),
             &mut tx).unwrap();
         tx.commit().unwrap();
         println!("So it is.");

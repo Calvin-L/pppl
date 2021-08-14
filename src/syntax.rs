@@ -106,6 +106,7 @@ pub enum Exp<A> {
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum LVal<A> {
     Root(A),
+    Name(A, String),
     Index(A, Box<LVal<A>>, Box<Exp<A>>),
 }
 
@@ -113,7 +114,7 @@ pub enum LVal<A> {
 pub struct Block<A> {
     pub annotation: A,
     pub name: String,
-    pub parameters: Vec<String>,
+    pub parameters: Vec<(String, Exp<A>)>,
     pub guards: Vec<Exp<A>>,
     pub assignments: Vec<(LVal<A>, Exp<A>)>,
 }
