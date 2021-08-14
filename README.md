@@ -89,6 +89,29 @@ Blocks can take parameters, such as `x in m` above.  If `m` is a dictionary,
 then `inc` can be run with `x` set to any key of `m`.
 
 
+#### Expression Summary
+
+```
+Booleans
+
+    true, false,
+    ==, !=,
+    &&, ||, !,
+    if _ then _ else _
+
+Numbers
+
+    +, -, *, /, %,
+    >, <, >=, <=
+
+Dictionaries
+
+    {}          (the empty map)
+    x in m      (test key presence)
+    m[x]        (lookup value by key)
+```
+
+
 ## Concrete Instructions
 
 First, compile this project:
