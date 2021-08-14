@@ -71,8 +71,8 @@ while True:
         execute the side-effects of that block
 ```
 
-In principle execution can be parallelized, but the current implementation is
-single-threaded.
+The current implementation is single-threaded.  To achieve true parallelism,
+run multiple copies of `ppppl run` at once (see commands below).
 
 
 #### Data Parallelism
@@ -147,6 +147,9 @@ Then load a program:
 Then run it:
 
     ./target/release/ppppl run
+
+It's always safe to have multiple `run` commands going at once.  In fact,
+that's how to achieve parallelism with the current implementation.
 
 While it's running, you might want to interact with it a bit:
 
