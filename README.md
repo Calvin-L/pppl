@@ -89,6 +89,27 @@ Blocks can take parameters, such as `x in m` above.  If `m` is a dictionary,
 then `inc` can be run with `x` set to any key of `m`.
 
 
+#### Doing Things in Sequence
+
+In some programming langauges, you have to do a lot of work to spawn threads
+and exploit multiple cores.  In PPPL, parallelism is the default!  ...But
+you'll have to do a lot of work to force sequential execution if you need it.
+
+```
+def step1:
+    require pc = 0;
+    pc := pc + 1;
+
+def step2:
+    require pc = 1;
+    pc := pc + 1;
+
+def step3:
+    require pc = 2;
+    pc := pc + 1;
+```
+
+
 #### Expression Summary
 
 ```
