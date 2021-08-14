@@ -97,15 +97,15 @@ you'll have to do a lot of work to force sequential execution if you need it.
 
 ```
 def step1:
-    require pc = 0;
+    require pc == 0;
     pc := pc + 1;
 
 def step2:
-    require pc = 1;
+    require pc == 1;
     pc := pc + 1;
 
 def step3:
-    require pc = 2;
+    require pc == 2;
     pc := pc + 1;
 ```
 
