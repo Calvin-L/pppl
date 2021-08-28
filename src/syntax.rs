@@ -83,6 +83,51 @@ impl std::fmt::Display for Value {
     }
 }
 
+#[derive(PartialEq, Eq)]
+enum StringParseState {
+    INIT,
+    NORMAL,
+    AFTERBACKSLASH,
+    DONE,
+}
+
+pub fn parse_str(s: &str) -> Option<String> {
+    let mut res = String::new();
+    let mut state = StringParseState::INIT;
+
+    for c in s.chars() {
+        match state {
+            StringParseState::INIT => {
+                if c != '"' {
+                    return Option::None;
+                }
+                state = StringParseState::NORMAL;
+            }
+            StringParseState::NORMAL => {
+                match c {
+                    '\\' => { state = StringParseState::AFTERBACKSLASH; }
+                    '"'  => { state = StringParseState::DONE; }
+                    _    => { res.push(c); }
+                }
+            }
+            StringParseState::AFTERBACKSLASH => {
+                match c {
+                    't' => { res.push('\t'); }
+                    'r' => { res.push('\r'); }
+                    'n' => { res.push('\n'); }
+                    _   => { res.push(c); }
+                }
+                state = StringParseState::NORMAL;
+            }
+            StringParseState::DONE => {
+                return Option::None;
+            }
+        }
+    }
+
+    return if state == StringParseState::DONE { Option::Some(res) } else { Option::None };
+}
+
 pub fn str2blob(s: &str) -> Vec<u8> {
     s.to_string().into_bytes()
 }

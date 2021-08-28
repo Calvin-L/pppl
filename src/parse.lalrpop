@@ -112,5 +112,5 @@ pub Module: Module<SourceSpan> = {
 Num: BigInt = <s:r"[0-9]+"> => BigInt::from_str(s).unwrap();
 True: bool = "true" => true;
 False: bool = "false" => false;
-StrLit: Vec<u8> = "\"x\"" => str2blob("x"); // TODO
+StrLit: Vec<u8> = <s:r##""([^\\"]|\\.)*""##> => str2blob(&parse_str(s).unwrap());
 Name: String = <s:r"[a-zA-Z]\w*"> => s.to_string();
